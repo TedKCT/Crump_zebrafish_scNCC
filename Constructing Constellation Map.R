@@ -109,6 +109,9 @@ for(l in 1:length(libs)){
 
 meta.skewed$tissue = regmatches(meta.skewed$tissue, regexpr('[^\\.]*$', meta.skewed$tissue))
 meta.skewed$time.tissue = paste0(meta.skewed$time.point, '.', meta.skewed$tissue)
+## output meta.skewed table
+write.table(meta.skewed, file = 'meta.skewed.tsv', sep = '\t', row.names = T,
+            col.names = T, quote = F)
 
 cluster.n = tissue.dist.list[[1]] %>% dim %>% .[1]
 lib.n = length(tissue.dist.list)
@@ -140,6 +143,9 @@ Umap.df = Umap.df %>%
   mutate(time = factor(time, levels = libs))
 
 Umap.df$tissue = factor(Umap.df$tissue, levels = 0:(cluster.n-1))
+## output UMAP coordinations
+write.table(Umap.df, file = 'Constellation umap.tsv', sep = '\t',
+            row.names = T, col.names = T, quote = F)
 
 Umap.df.solid = Umap.df %>% filter(time.tissue %in% meta.skewed$time.tissue)
 
