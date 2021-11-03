@@ -28,7 +28,7 @@ Meta.solid.line = left_join(Meta.filtered, Umap.df, by = c('time.tissue' = 'time
 #   return(sig)
 # }
 
-# Import the correlation test results generated from "TF correlation test"
+# Import the correlation test results of motifs generated from "TF correlation test"
 DF2 = data.frame()
 for(i in seq_along(libs)){
   TF.test.path = paste0('TF.test/TF.test.', libs[i], '/')
@@ -61,10 +61,9 @@ colnames(df.index)[1] = 'Motif.id'
 new.lookup = read.csv('Constellation curating TF and Motif homologous look up 053021.csv', na.strings = '', header = T, row.names = 1)
 HOM.TF.lookup = new.lookup %>% filter(!is.na(Motif)) %>% select(zebrafish, Motif)
 colnames(HOM.TF.lookup) = c('TF', 'Motif')
-
-# Expand to TFs
 fish.TFs = HOM.TF.lookup$TF
 
+# Import the correlation test results of gene activities generated from "TF correlation test"
 DF3 = data.frame()
 for(i in seq_along(libs)){
   gene.test.path = paste0('G.test/G.test.', libs[i], '/')
@@ -103,33 +102,17 @@ for(i in 1:nrow(HOM.TF.lookup)){
 }
 rownames(HOM.TF.lookup) = HOM.TF.lookup$TF
 
-motif = 'POU3F3'
-motif.id = df.index$Motif.id[which(df.index$Motif.names == motif)]
-gene = 'pou3f3b'
+#
+Passed.motif = HOM.TF.lookup %>% filter(coef >= 0) %>% pull(Motif)
+Passed.TF = HOM.TF.lookup %>% filter(!is.na(coef) & TF.NA <= 23 & coef >= 0) %>% pull(TF)
 
-# plot(Umap.DF3[, motif.id], Umap.DF3[, gene])
-
-ggplot(Umap.DF3, aes(x = x, y = y)) +
-  geom_point(aes(size = sigmoid(get(motif.id)), color = sigmoid(get(gene)))) +
-  scale_color_gradient(low = 'lightgray', high = 'red') +
-  geom_path(aes(group = tissue), linetype = 'dashed', color = 'lightgray') +
-  geom_path(data = Meta.solid.line, aes(group = tissue.y), linetype = 'solid', color = 'lightgray') +
-  cowplot::theme_cowplot() +
-  guides(color = guide_legend(title = 'correlation with gene'), size = guide_legend(title = 'correlation with motif')) +
-  ggtitle(paste0(motif, ' and ', gene))
-
-
-# Good.motif = HOM.TF.lookup %>% filter(coef >= quantile(coef, .75, na.rm = T) & TF.NA <= 23) %>% pull(Symbol.human)
-Good.motif = HOM.TF.lookup %>% filter(coef >= 0) %>% pull(Motif)
-Good.TF = HOM.TF.lookup %>% filter(!is.na(coef) & TF.NA <= 23 & coef >= 0) %>% pull(TF)
-
-# Check what happened at each skew point
+# Generate supplementary table 6
 Meta.solid.line$TF = Meta.solid.line$motif = NA
 for(i in 1:nrow(Meta.solid.line)){
   TF.test.path = paste0('TF.test/TF.test.', Meta.solid.line$time.point[i], '/')
   df = read.csv(paste0(TF.test.path, 'TF.test.lib.14dpf.', Meta.solid.line$tissue.y[i], '.csv'), stringsAsFactors = F)
   colnames(df)[1] = 'Motif.id'
-  df.motif = df %>% filter(Motif.names %in% Good.motif) %>% 
+  df.motif = df %>% filter(Motif.names %in% Passed.motif) %>% 
     filter(p.adj <= .05) %>% 
     arrange(desc(cor))
   row.names(df.motif) = df.motif$Motif.names
@@ -142,7 +125,7 @@ for(i in 1:nrow(Meta.solid.line)){
     arrange(desc(cor))
   rownames(df.TF) = df.TF$gene.name
   
-  TF.names = df.TF %>% filter(gene.name %in% Good.TF) %>% slice_max(order_by = cor, n = 20) %>% pull(gene.name)
+  TF.names = df.TF %>% filter(gene.name %in% Passed.TF) %>% slice_max(order_by = cor, n = 20) %>% pull(gene.name)
   Motif.names = df.motif[unique(HOM.TF.lookup[which(HOM.TF.lookup$TF %in% TF.names), ]$Motif), ] %>% 
     slice_max(order_by = cor, n = 100) %>% 
     filter(!is.na(motif.id) & cor >= 0) %>% 
@@ -153,34 +136,15 @@ for(i in 1:nrow(Meta.solid.line)){
   
 }
 
-# output for Gage and Peter
-Meta.output = Meta.solid.line %>% select(time.point, tissue.x, motif, TF) %>% arrange(tissue.x)
-colnames(Meta.output)[2] = 'tissue.score'
-# write.csv(Meta.output, file = 'Constellation predicted importand motif and TF for each tissue score 060621.csv')
+supplementary.tb = Meta.solid.line %>% select(time.point, tissue.x, motif, TF) %>% arrange(tissue.x)
+colnames(supplementary.tb)[2] = 'tissue.score'
+write.csv(supplementary.tb, file = 'supplementary table 6.csv')
 
-# 060221 
-# Improvement of correlation table through filtering out the negative correlation points
-# also stop using sigmoid function for transformtaion
+# Build up "Galaxy": supplementary figure 22
 DF4 = Umap.DF3[, 6:ncol(Umap.DF3)] %>% as.matrix()
 DF4[DF4 < 0] = 0
 Umap.DF4 = cbind(Umap.DF3[, 1:5], DF4)
 
-motif = 'LEF1'
-motif.id = df.index$Motif.id[which(df.index$Motif.names == motif)]
-gene = 'lef1'
-
-Umap.plot = Umap.DF4 %>% select(x, y, all_of(motif.id), all_of(gene)) %>% arrange((get(gene)))
-ggplot(Umap.plot, aes(x = x, y = y)) +
-  geom_point(aes(size = get(motif.id), color = get(gene))) +
-  scale_color_gradient(low = 'lightgray', high = 'red') +
-  geom_path(data = Umap.DF4, aes(group = tissue), linetype = 'dashed', color = 'lightgray') +
-  geom_path(data = Meta.solid.line, aes(group = tissue.y), linetype = 'solid', color = 'lightgray') +
-  cowplot::theme_cowplot() +
-  guides(color = guide_legend(title = 'correlation with gene'), size = guide_legend(title = 'correlation with motif')) +
-  ggtitle(paste0(motif, ' and *', gene, '*')) +
-  theme(plot.title = element_markdown())
-
-# Build up "Galaxy": the complete Umap plot set for each Motif-TF pair in Meta.output table
 outputed.TF = c()
 for(i in 1:nrow(Meta.output)){
   outputed.TF = c(outputed.TF, strsplit(Meta.output$TF[i], split = ' | ', fixed = T) %>% unlist)
@@ -206,88 +170,3 @@ for(i in seq_along(outputed.TF)){
   ggsave(filename = paste0(motif, ' and ', gene, '.pdf'), path = galaxy.path, plot = p, device = 'pdf',
          units = 'in', height = 5, width = 8)
 }
-
-# 060321 
-# gill cart vs hyal cart gata factor
-motif = 'GATA3'
-motif.id = df.index$Motif.id[which(df.index$Motif.names == motif)]
-gene = 'gata3'
-
-Umap.plot = Umap.DF4 %>% 
-  filter(tissue %in% c(4, 22)) %>% 
-  mutate(tissue = ifelse(tissue == 4, 0, 1)) %>% 
-  select(x, y, tissue, all_of(motif.id), all_of(gene)) %>% arrange((get(gene)))
-
-ggplot(Umap.plot, aes(x = x, y = y)) +
-  geom_path(data = Umap.DF4, aes(group = tissue), linetype = 'dashed', color = 'lightgray') +
-  geom_path(data = Meta.solid.line, aes(group = tissue.y), linetype = 'solid', color = 'lightgray') +
-  geom_point(aes(size = get(motif.id), fill = get(gene), color = tissue), shape = 21) +
-  scale_fill_gradient(low = 'lightgray', high = 'red') +
-  scale_color_gradient(low = '#FFFFFF00', high = '#000000FF') +
-  cowplot::theme_cowplot() +
-  guides(color = guide_legend(title = 'correlation with gene'), size = guide_legend(title = 'correlation with motif')) +
-  coord_cartesian(xlim = c(-2, -1), ylim = c(-2.5, -1)) +
-  Seurat::NoAxes() +
-  theme(legend.position = 'none') +
-  ggtitle(paste0(motif, ' and ', gene))
-
-
-# 060721 
-# plot Constellation of 'foxc1b', 'lef1', 'gata3', 'ets', 'cebpa', and 'irf8' for Fig. 5
-fig5.motifs = c('FOXC1', 'LEF1', 'GATA3', 'ETS2', 'CEBPA', 'IRF8')
-fig5.genes = c('foxc1b', 'lef1', 'gata3', 'ets2', 'cebpa', 'irf8')
-fig5.path = 'Constellation Fig5/'
-
-for(i in seq_along(fig5.genes)){
-  motif.id = df.index$Motif.id[which(df.index$Motif.names == fig5.motifs[i])]
-  gene = fig5.genes[i]
-  
-  Umap.plot = Umap.DF4 %>% select(x, y, all_of(motif.id), all_of(gene)) %>% arrange((get(gene)))
-  p = ggplot(Umap.plot, aes(x = x, y = y)) +
-    geom_point(aes(size = get(motif.id), color = get(gene))) +
-    scale_color_gradient(low = 'lightgray', high = 'red') +
-    geom_path(data = Umap.DF4, aes(group = tissue), linetype = 'dashed', color = 'lightgray') +
-    geom_path(data = Meta.solid.line, aes(group = tissue.y), linetype = 'solid', color = 'lightgray') +
-    cowplot::theme_cowplot() +
-    theme(legend.position = 'none') +
-    ggtitle(paste0(fig5.motifs[i], ' and ', gene)) & Seurat::NoAxes()
-  
-  ggsave(filename = paste0(fig5.motifs[i], ' and ', fig5.genes[i], '.pdf'), path = fig5.path, plot = p, device = 'pdf',
-         units = 'in', height = 5, width = 5)
-  
-}
-
-# Generate supplementary plots
-# Fine tune with the size
-# Divide 281 plots into three 8*12 pdf
-# Need to change the for loop and output manually, though
-library(patchwork)
-supp.TF.lookup = HOM.TF.lookup %>% filter(TF %in% setdiff(Good.TF, fig5.genes))
-
-supp.plot.list = list()
-for (i in (96*2+1):281) {
-  message(i)
-  supp.plot.list[[i-96*2]] <- local({
-    gene = supp.TF.lookup[i, 'TF']
-    motif = supp.TF.lookup[i, 'Motif']
-    motif.id = df.index$Motif.id[which(df.index$Motif.names == motif)]
-    
-    Umap.plot = Umap.DF4 %>% select(x, y, all_of(motif.id), all_of(gene)) %>% arrange(!is.na(get(gene)), (get(gene)))
-    p = ggplot(Umap.plot, aes(x = x, y = y)) +
-      geom_path(data = Umap.DF4, aes(group = tissue), linetype = 'dotted', color = 'lightgray', size = .1) +
-      geom_path(data = Meta.solid.line, aes(group = tissue.y), linetype = 'solid', color = 'lightgray', size = .1) +
-      geom_point(aes(size = get(motif.id), color = get(gene))) +
-      scale_color_gradient(low = 'lightgray', high = 'red') +
-      scale_size(range = c(0,.5)) +
-      cowplot::theme_cowplot() +
-      ggtitle(paste0(motif, ' and *', gene, '*')) +
-      theme(plot.title = element_markdown(),legend.position = 'none', title = element_text(size = 5), plot.margin = unit(c(0,0,0,0), units = 'cm')) & Seurat::NoAxes()
-    
-    return(p)
-  })
-}
-
-P = Reduce('+', supp.plot.list) + plot_layout(ncol = 8)
-ggsave('Constellation supplementary c.pdf', plot = P, device = 'pdf', units = 'in', width = 8, height = 12)
-
-
