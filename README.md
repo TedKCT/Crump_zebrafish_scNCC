@@ -30,7 +30,7 @@ By running the script "*I. Constructing Constellation Map.R*", you will be able 
 6. Calculated the skewness of each tissue module score of every library
 7. Build up and output the skewed tissue-time table (will be used in *Step 3*)
 8. Expand and combine between-time points matrix and between-tissue matrices and get the final distance matrix
-9. Use the final distance matrix for dimensional reduction by UMAP
+9. Use the final distance matrix for dimensional reduction by UMAP (will be used in *Step 3*)
 10. Output and plotting
 
 ---
