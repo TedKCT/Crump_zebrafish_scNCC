@@ -22,12 +22,6 @@ Meta.filtered$time.tissue = paste0(Meta.filtered$time.point, '.', gsub('lib.14dp
 
 Meta.solid.line = left_join(Meta.filtered, Umap.df, by = c('time.tissue' = 'time.tissue'))
 
-# sigmoid = function(x){
-#   y = x - (max(x, na.rm = T) + min(x, na.rm = T))/2
-#   sig = 1/(1+exp(-y*10))
-#   return(sig)
-# }
-
 # Import the correlation test results of motifs generated from "TF correlation test"
 DF2 = data.frame()
 for(i in seq_along(libs)){
@@ -53,13 +47,9 @@ Umap.DF2 = inner_join(Umap.df, DF2, by = 'time.tissue')
 df.index = read.csv(paste0(TF.test.path, 'TF.test.lib.14dpf.', j, '.csv'), stringsAsFactors = F)
 colnames(df.index)[1] = 'Motif.id'
 
-
-
-
-
-# Import the updated motif
-new.lookup = read.csv('Constellation curating TF and Motif homologous look up 053021.csv', na.strings = '', header = T, row.names = 1)
-HOM.TF.lookup = new.lookup %>% filter(!is.na(Motif)) %>% select(zebrafish, Motif)
+# Import the curated motif list
+lookup = read.csv('MGI HOM TF lookup.csv', na.strings = '', header = T, row.names = 1)
+HOM.TF.lookup = lookup %>% filter(!is.na(Motif)) %>% select(zebrafish, Motif)
 colnames(HOM.TF.lookup) = c('TF', 'Motif')
 fish.TFs = HOM.TF.lookup$TF
 
@@ -152,6 +142,7 @@ for(i in 1:nrow(Meta.output)){
 outputed.TF = unique(outputed.TF)
 
 galaxy.path = 'Constellation UMAP Galaxy/'
+dir.create('Constellation UMAP Galaxy')
 for(i in seq_along(outputed.TF)){
   gene = outputed.TF[i]
   motif = HOM.TF.lookup[which(HOM.TF.lookup$TF == gene), 'Motif']

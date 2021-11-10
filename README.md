@@ -34,3 +34,21 @@ By running the script "*I. Constructing Constellation Map.R*", you will be able 
 10. Output and plotting
 
 ---
+
+## Step 2: TF/motif vs module score correlation test
+
+Continued from the **Step I**, the script "*II. Correlation Test.R*" calculates the correlations between <br>
+
+- motif accessibility vs tissue module score
+- gene activity vs tissue module score
+
+for every time point and every tissue module score. In the end, it will output the motif accessibility correlation results (prefixed "*TF.test.*") and gene activity correlation results (prefixed "*G.test.*") and store them in folders by time points.
+
+---
+
+## Step 3: Output important TF/motif pairs and building up Galaxy
+
+In the script "*III. Building Galaxy.R*", we import previously built Constellation map, skewed table, motif accessibility and gene activity correlation test. We then use these results in combination with curated homologous table "*MGI HOM TF lookup.csv*" to test and select the TFs that show both interesting relationship by their motif accessibilities and gene activities. These TF pairs will be further collapsed and output to the table "*supplementary table 6.csv*", which is the same supplementary table in our manuscript.
+
+The results of TF pairs will also be used for building Galaxy, a collection of Constellation map reflecting the magnitudes of correlation for both motif accessibility and gene activity of a TF pair. The Galaxy will be plot and output into a local directory "*Constellation UMAP Galaxy/*".
+
