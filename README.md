@@ -10,7 +10,7 @@ Please refer to the manuscript for detailed pipeline of data collection, QC, and
 
 ## Step 0: Processed data loading
 
-The processed data are available at [FaceBase](https://www.facebase.org/chaise/record/#1/isa:project/RID=3-KG12) as R objects (rds format). We are just going to use the snATAC_SnapATAC rds objects as we already impute the transcriptomes from scRNA to these snATAC_SnapATAC objects. These rds objects are essentially Seurat/Signac objects with the following assays: <br>
+The processed data are available at [FaceBase](https://www.facebase.org/chaise/record/#1/isa:dataset/RID=5-DAQ4) as R objects (rds format). We are just going to use the snATAC_SnapATAC rds objects as we already impute the transcriptomes from scRNA to these snATAC_SnapATAC objects. These rds objects are essentially Seurat/Signac objects with the following assays: <br>
 
 - An `[['ATAC']]` assay of *peak-by-cell* matrix with peaks called by [SnapATAC](https://github.com/r3fang/SnapATAC)
 - An `[['ACTIVITY']]` assay of imputed *gene activity-by-cell* matrix from corresponding scRNA data anchored by *gmat* calculated from *bmat* of Snap objects
